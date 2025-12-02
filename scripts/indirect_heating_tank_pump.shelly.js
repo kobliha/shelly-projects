@@ -18,7 +18,7 @@
 const KVS_CONFIG_KEY = "indirect_heating_config";
 
 const DEFAULT_CONFIG = {
-  // secs, this will run a timer for every 30 seconds, that will fetch the voltage
+  // The interval, in seconds, to check the temperatures and adjust the pump state.
   scanInterval: 30,
   // The ID of the thermometer for the water in the storage tank.
   hotWaterTemperatureID: 100,
@@ -110,7 +110,7 @@ function checkAndAdjust(config) {
     } else if (heatingSourceTemperature <= (hotWaterTemperature + config.waterPumpStopDifference) && waterPumpRunning()) {
       debugLog("Temperature difference is too low, stopping pump for efficiency...");
       stopWaterPump();
-    // Start Condition: Heating source is sufficiently hotter than the tank.
+    // Start Condition: Max water temp is not reached yet and heating source is sufficiently hotter than the tank
     } else if (hotWaterTemperature < config.maxWaterTemp && heatingSourceTemperature >= (hotWaterTemperature + config.waterPumpHysteresis) && !waterPumpRunning()) {
       debugLog("Heating source is hot enough, starting pump...");
       startWaterPump();
@@ -120,11 +120,16 @@ function checkAndAdjust(config) {
   }
 }
 
-// This function contains the logic that runs after configuration is loaded.
+/**
+ * @description This function contains the logic that runs after configuration is loaded.
+ */
 function run() {
-  stopWaterPump(); // Initialize in a known state.
-  checkAndAdjust(CONFIG); // Run a check immediately.
-  Timer.set(CONFIG.scanInterval * 1000, true, function() { checkAndAdjust(CONFIG); }); // Start the recurring timer.
+  // Initialize in a known state.
+  stopWaterPump();
+  // Run a check immediately.
+  checkAndAdjust(CONFIG);
+  // Start the recurring timer.
+  Timer.set(CONFIG.scanInterval * 1000, true, function() { checkAndAdjust(CONFIG); });
 }
 
 /**
@@ -155,7 +160,7 @@ function init() {
 
       // Now that CONFIG is set, we can safely log the outcome.
       if (Object.keys(loadedConfig).length > 0) {
-        debugLog("Custom configuration loaded from KVS.");
+        debugLog("Custom configuration loaded from KVS:" + JSON.stringify(loadedConfig));
       } else {
         debugLog("No custom configuration found in KVS. Using default settings.");
       }
