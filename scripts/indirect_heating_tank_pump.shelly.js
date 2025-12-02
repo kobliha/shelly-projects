@@ -9,16 +9,9 @@
 
 /**
  * The key used to store and retrieve custom configuration from the Shelly Key-Value Store.
- * You can set your own values in KVS using Debug -> RPC console in your device,
- * entering the following command and pressing [Send]
- * 
- * {
- *   "method": "KVS.Set",
- *   "params": {
- *     "key": "indirect_heating_config",
- *     "value": "{\"hotWaterTemperatureID\": 102, \"maxWaterTemp\": 70, \"debuggingOn\": true}"
- *   }
- * }
+ * You can set your own values in the device web-interface: 
+ *   Key: "indirect_heating_config",
+ *   Value: { "scanInterval": 3, "maxWaterTemp": 30, "debuggingOn": true }"
  * 
  * See https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/KVS
  */
@@ -118,7 +111,7 @@ function checkAndAdjust(config) {
       debugLog("Temperature difference is too low, stopping pump for efficiency...");
       stopWaterPump();
     // Start Condition: Heating source is sufficiently hotter than the tank.
-    } else if (hotWaterTemperature < config.maxWaterTemp && heatingSourceTemperature >= (hotWaterTemperature + config.waterPumpHysteresis) && !waterPumpRunning()) {
+    } else if (heatingSourceTemperature >= (hotWaterTemperature + config.waterPumpHysteresis) && !waterPumpRunning()) {
       debugLog("Heating source is hot enough, starting pump...");
       startWaterPump();
     }
@@ -131,7 +124,7 @@ function checkAndAdjust(config) {
 function run() {
   stopWaterPump(); // Initialize in a known state.
   checkAndAdjust(CONFIG); // Run a check immediately.
-  Timer.set(CONFIG.scanInterval * 1000, true, () => checkAndAdjust(CONFIG)); // Start the recurring timer.
+  Timer.set(CONFIG.scanInterval * 1000, true, function() { checkAndAdjust(CONFIG); }); // Start the recurring timer.
 }
 
 /**
@@ -159,7 +152,6 @@ function init() {
       // Merge the loaded configuration over the defaults.
       // This allows users to only override the values they need to.
       CONFIG = Object.assign({}, DEFAULT_CONFIG, loadedConfig);
-      Object.freeze(CONFIG); // Make the final config immutable.
 
       // Now that CONFIG is set, we can safely log the outcome.
       if (Object.keys(loadedConfig).length > 0) {
