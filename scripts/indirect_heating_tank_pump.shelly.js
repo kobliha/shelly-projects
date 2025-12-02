@@ -111,7 +111,7 @@ function checkAndAdjust(config) {
       debugLog("Temperature difference is too low, stopping pump for efficiency...");
       stopWaterPump();
     // Start Condition: Heating source is sufficiently hotter than the tank.
-    } else if (heatingSourceTemperature >= (hotWaterTemperature + config.waterPumpHysteresis) && !waterPumpRunning()) {
+    } else if (hotWaterTemperature < config.maxWaterTemp && heatingSourceTemperature >= (hotWaterTemperature + config.waterPumpHysteresis) && !waterPumpRunning()) {
       debugLog("Heating source is hot enough, starting pump...");
       startWaterPump();
     }

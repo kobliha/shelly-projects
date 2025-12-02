@@ -319,6 +319,32 @@ test('init should load and merge custom config from KVS', (done) => {
   }, 10);
 });
 
+test('checkAndAdjust should not restart pump after hitting max temp', () => {
+  // --- Step 1: Stop the pump because max temperature is reached ---
+
+  // Setup: Pump is ON, tank temperature is at max.
+  mockState.switchStatus.output = true;
+  mockState.temperatures = {
+    [DEFAULT_CONFIG.hotWaterTemperatureID]: { tC: 65 }, // Exactly at maxWaterTemp
+    [DEFAULT_CONFIG.heatingSourceTemperatureID]: { tC: 80 }, // Source is very hot
+  };
+  setCONFIG(DEFAULT_CONFIG);
+
+  // First check: this should stop the pump.
+  checkAndAdjust(DEFAULT_CONFIG);
+
+  assertEquals(false, mockState.switchStatus.output, 'Step 1: Pump should be stopped at max temp');
+  assertTrue(mockState.printLog.some(m => m.includes('maximum temperature')), 'Step 1: Should print max temp message');
+
+  // --- Step 2: Verify the pump does NOT restart on the next cycle ---
+
+  // The state is now: pump is OFF. Temperatures still meet the start condition's
+  // hysteresis (80 >= 65 + 7), but the pump should not start due to max temp.
+  checkAndAdjust(DEFAULT_CONFIG);
+
+  assertEquals(false, mockState.switchStatus.output, 'Step 2: Pump should remain off');
+});
+
 // --- Run Tests ---
 
 // This part is adapted for Node.js environment to run the tests.
